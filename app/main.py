@@ -1,15 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.llm_service import get_answer_from_gemini
+from pydantic import BaseModel
 
 app = FastAPI()
 
-class QuestionRequest(BaseModel):
+origins = [
+    "http://localhost:3000",  
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class Question(BaseModel):
     question: str
 
 @app.post("/ask")
-def ask_question(payload: QuestionRequest):
-    answer = get_answer_from_gemini(payload.question)
-    if "Error from Gemini" in answer:
-        raise HTTPException(status_code=500, detail=answer)
+def ask_question(q: Question):
+    answer = get_answer_from_gemini(q.question)
     return {"answer": answer}
